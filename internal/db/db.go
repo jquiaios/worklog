@@ -41,14 +41,17 @@ func (d *DB) Close() error {
 	return d.sql.Close()
 }
 
-func (d *DB) Insert(e entry.Entry) error {
-	_, err := d.sql.Exec(
+func (d *DB) Insert(e entry.Entry) (int64, error) {
+	res, err := d.sql.Exec(
 		`INSERT INTO entries (type, body, created_at) VALUES (?, ?, ?)`,
 		string(e.Type),
 		e.Body,
 		e.CreatedAt.UTC().Format(time.RFC3339),
 	)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
 }
 
 func (d *DB) List(typeFilter string) ([]entry.Entry, error) {

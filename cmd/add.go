@@ -42,7 +42,7 @@ func addEntry(t entry.Type) func(cmd *cobra.Command, args []string) {
 		defer store.Close()
 
 		e := entry.Entry{Type: t, Body: body, CreatedAt: time.Now()}
-		if err := store.Insert(e); err != nil {
+		if _, err := store.Insert(e); err != nil {
 			fmt.Fprintln(os.Stderr, "error saving entry:", err)
 			os.Exit(1)
 		}

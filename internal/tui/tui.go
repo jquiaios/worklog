@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -18,6 +19,7 @@ var (
 
 	colColors = [2]lipgloss.Color{highlightColor, lowlightColor}
 	colTitles = [2]string{"Highlights", "Lowlights"}
+	colTypes  = [2]entry.Type{entry.Highlight, entry.Lowlight}
 
 	blurredBorder = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
@@ -50,6 +52,7 @@ const (
 	stateNormal viewState = iota
 	stateConfirmDelete
 	stateEditing
+	stateAdding
 )
 
 type Model struct {
@@ -144,6 +147,38 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.state = stateNormal
 			return m, nil
 
+		case stateAdding:
+			switch msg.String() {
+			case "enter":
+				body := strings.TrimSpace(m.textInput.Value())
+				if body != "" {
+					e := entry.Entry{
+						Type:      colTypes[m.focused],
+						Body:      body,
+						CreatedAt: time.Now(),
+					}
+					id, err := m.store.Insert(e)
+					if err != nil {
+						m.err = err
+					} else {
+						e.ID = id
+						m.err = nil
+						m.cols[m.focused].InsertItem(0, item{e})
+					}
+				}
+				m.state = stateNormal
+				m.textInput.Blur()
+				return m, nil
+			case "esc":
+				m.state = stateNormal
+				m.textInput.Blur()
+				return m, nil
+			default:
+				var cmd tea.Cmd
+				m.textInput, cmd = m.textInput.Update(msg)
+				return m, cmd
+			}
+
 		case stateEditing:
 			switch msg.String() {
 			case "enter":
@@ -202,6 +237,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.textInput.Focus()
 				m.state = stateEditing
 				return m, nil
+			case "n":
+				m.textInput.SetValue("")
+				m.textInput.Width = m.width - 6
+				m.textInput.Focus()
+				m.state = stateAdding
+				return m, nil
 			}
 		}
 	}
@@ -252,16 +293,20 @@ func (m Model) View() string {
 			"  " + keyStyle.Render("y") + helpStyle.Render(" confirm") +
 			"  " + keyStyle.Render("n / esc") + helpStyle.Render(" cancel")
 
-	case stateEditing:
+	case stateAdding, stateEditing:
+		label := "New " + string(colTypes[m.focused])
+		if m.state == stateEditing {
+			label = "Edit"
+		}
 		inputStyle := lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(colColors[m.focused]).
 			Padding(0, 1).
 			Width(m.width - 6)
-		footer = inputStyle.Render(m.textInput.View())
+		footer = inputStyle.Render(label + ": " + m.textInput.View())
 
 	default:
-		footer = helpStyle.Render("tab: switch  d: delete  e: edit  /: filter  q: quit")
+		footer = helpStyle.Render("tab: switch  n: new  d: delete  e: edit  /: filter  q: quit")
 		if m.err != nil {
 			footer += errStyle.Render("error: " + m.err.Error())
 		}
