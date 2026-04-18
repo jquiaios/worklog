@@ -1,0 +1,15 @@
+# built binary
+worklog
+
+# test artifacts
+*.test
+coverage.out
+
+# OS
+.DS_Store
+Thumbs.db
+
+# editors
+.idea/
+.vscode/
+*.swp
