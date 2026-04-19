@@ -54,12 +54,20 @@ func (d *DB) Insert(e entry.Entry) (int64, error) {
 	return res.LastInsertId()
 }
 
-func (d *DB) List(typeFilter string) ([]entry.Entry, error) {
-	q := `SELECT id, type, body, created_at FROM entries`
+func (d *DB) List(typeFilter string, from, to time.Time) ([]entry.Entry, error) {
+	q := `SELECT id, type, body, created_at FROM entries WHERE 1=1`
 	var args []any
 	if typeFilter != "" {
-		q += ` WHERE type = ?`
+		q += ` AND type = ?`
 		args = append(args, typeFilter)
+	}
+	if !from.IsZero() {
+		q += ` AND created_at >= ?`
+		args = append(args, from.UTC().Format(time.RFC3339))
+	}
+	if !to.IsZero() {
+		q += ` AND created_at < ?`
+		args = append(args, to.UTC().Format(time.RFC3339))
 	}
 	q += ` ORDER BY created_at DESC`
 

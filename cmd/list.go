@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/jquiaios/worklog/internal/db"
 	"github.com/jquiaios/worklog/internal/entry"
@@ -29,7 +30,7 @@ var listCmd = &cobra.Command{
 		}
 		defer store.Close()
 
-		entries, err := store.List(typeFilter)
+		entries, err := store.List(typeFilter, time.Time{}, time.Time{})
 		if err != nil {
 			return fmt.Errorf("listing entries: %w", err)
 		}

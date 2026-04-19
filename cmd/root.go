@@ -7,7 +7,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jquiaios/worklog/internal/db"
-	"github.com/jquiaios/worklog/internal/entry"
 	"github.com/jquiaios/worklog/internal/tui"
 	"github.com/spf13/cobra"
 )
@@ -22,16 +21,10 @@ var rootCmd = &cobra.Command{
 		}
 		defer store.Close()
 
-		highlights, err := store.List(string(entry.Highlight))
+		m, err := tui.New(store)
 		if err != nil {
 			return err
 		}
-		lowlights, err := store.List(string(entry.Lowlight))
-		if err != nil {
-			return err
-		}
-
-		m := tui.New(store, highlights, lowlights)
 		_, err = tea.NewProgram(m, tea.WithAltScreen()).Run()
 		return err
 	},

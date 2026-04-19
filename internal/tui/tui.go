@@ -13,6 +13,8 @@ import (
 	"github.com/jquiaios/worklog/internal/entry"
 )
 
+// ── styles ────────────────────────────────────────────────────────────────────
+
 var (
 	highlightColor = lipgloss.Color("42")
 	lowlightColor  = lipgloss.Color("203")
@@ -25,11 +27,64 @@ var (
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("238"))
 
-	helpStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Padding(0, 1)
-	confirmStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("214")).Bold(true).Padding(0, 1)
-	errStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("203")).Padding(0, 1)
-	keyStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("255")).Bold(true)
+	periodLabelStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("255"))
+	periodNavStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	helpStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Padding(0, 1)
+	confirmStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("214")).Bold(true).Padding(0, 1)
+	errStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("203")).Padding(0, 1)
+	keyStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("255")).Bold(true)
 )
+
+// ── period ────────────────────────────────────────────────────────────────────
+
+type period struct {
+	year    int
+	quarter int // 1–4; 0 = all time
+}
+
+func currentPeriod() period {
+	now := time.Now()
+	return period{year: now.Year(), quarter: (int(now.Month())-1)/3 + 1}
+}
+
+func (p period) label() string {
+	if p.quarter == 0 {
+		return "All time"
+	}
+	return fmt.Sprintf("Q%d %d", p.quarter, p.year)
+}
+
+func (p period) bounds() (from, to time.Time) {
+	if p.quarter == 0 {
+		return time.Time{}, time.Time{}
+	}
+	month := time.Month((p.quarter-1)*3 + 1)
+	from = time.Date(p.year, month, 1, 0, 0, 0, 0, time.Local)
+	to = from.AddDate(0, 3, 0)
+	return
+}
+
+func (p period) prev() period {
+	if p.quarter == 0 {
+		return p
+	}
+	if p.quarter == 1 {
+		return period{year: p.year - 1, quarter: 4}
+	}
+	return period{year: p.year, quarter: p.quarter - 1}
+}
+
+func (p period) next() period {
+	if p.quarter == 0 {
+		return currentPeriod()
+	}
+	if p.quarter == 4 {
+		return period{year: p.year + 1, quarter: 1}
+	}
+	return period{year: p.year, quarter: p.quarter + 1}
+}
+
+// ── list item ─────────────────────────────────────────────────────────────────
 
 type item struct {
 	e entry.Entry
@@ -38,6 +93,8 @@ type item struct {
 func (i item) Title() string       { return i.e.Body }
 func (i item) Description() string { return fmt.Sprintf("#%d · %s", i.e.ID, i.e.CreatedAt.Local().Format("2006-01-02")) }
 func (i item) FilterValue() string { return i.e.Body }
+
+// ── model ─────────────────────────────────────────────────────────────────────
 
 type col int
 
@@ -58,6 +115,7 @@ const (
 type Model struct {
 	cols        [2]list.Model
 	focused     col
+	period      period
 	store       *db.DB
 	width       int
 	height      int
@@ -67,7 +125,7 @@ type Model struct {
 	textInput   textinput.Model
 }
 
-func New(store *db.DB, highlights, lowlights []entry.Entry) Model {
+func New(store *db.DB) (Model, error) {
 	hlDelegate := list.NewDefaultDelegate()
 	hlDelegate.Styles.SelectedTitle = hlDelegate.Styles.SelectedTitle.Foreground(highlightColor).BorderForeground(highlightColor)
 	hlDelegate.Styles.SelectedDesc = hlDelegate.Styles.SelectedDesc.Foreground(highlightColor)
@@ -76,24 +134,40 @@ func New(store *db.DB, highlights, lowlights []entry.Entry) Model {
 	llDelegate.Styles.SelectedTitle = llDelegate.Styles.SelectedTitle.Foreground(lowlightColor).BorderForeground(lowlightColor)
 	llDelegate.Styles.SelectedDesc = llDelegate.Styles.SelectedDesc.Foreground(lowlightColor)
 
-	hlList := list.New(toItems(highlights), hlDelegate, 0, 0)
+	hlList := list.New(nil, hlDelegate, 0, 0)
 	hlList.SetShowHelp(false)
 
-	llList := list.New(toItems(lowlights), llDelegate, 0, 0)
+	llList := list.New(nil, llDelegate, 0, 0)
 	llList.SetShowHelp(false)
 
 	ti := textinput.New()
 	ti.CharLimit = 500
-	ti.Prompt = "  "
+	ti.Prompt = " "
 
 	m := Model{
 		cols:      [2]list.Model{hlList, llList},
 		focused:   colHighlight,
+		period:    currentPeriod(),
 		store:     store,
 		textInput: ti,
 	}
 	m.updateFocusStyles()
-	return m
+	if err := m.loadPeriod(); err != nil {
+		return Model{}, err
+	}
+	return m, nil
+}
+
+func (m *Model) loadPeriod() error {
+	from, to := m.period.bounds()
+	for _, c := range []col{colHighlight, colLowlight} {
+		entries, err := m.store.List(string(colTypes[c]), from, to)
+		if err != nil {
+			return err
+		}
+		m.cols[c].SetItems(toItems(entries))
+	}
+	return nil
 }
 
 func toItems(entries []entry.Entry) []list.Item {
@@ -119,9 +193,9 @@ func (m *Model) updateFocusStyles() {
 	}
 }
 
-func (m Model) Init() tea.Cmd {
-	return nil
-}
+// ── update ────────────────────────────────────────────────────────────────────
+
+func (m Model) Init() tea.Cmd { return nil }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -134,10 +208,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch m.state {
 		case stateConfirmDelete:
-			switch msg.String() {
-			case "y":
-				_, err := m.store.Delete(m.pendingItem.e.ID)
-				if err != nil {
+			if msg.String() == "y" {
+				if _, err := m.store.Delete(m.pendingItem.e.ID); err != nil {
 					m.err = err
 				} else {
 					m.err = nil
@@ -152,18 +224,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "enter":
 				body := strings.TrimSpace(m.textInput.Value())
 				if body != "" {
-					e := entry.Entry{
-						Type:      colTypes[m.focused],
-						Body:      body,
-						CreatedAt: time.Now(),
-					}
-					id, err := m.store.Insert(e)
-					if err != nil {
+					e := entry.Entry{Type: colTypes[m.focused], Body: body, CreatedAt: time.Now()}
+					if _, err := m.store.Insert(e); err != nil {
 						m.err = err
 					} else {
-						e.ID = id
 						m.err = nil
-						m.cols[m.focused].InsertItem(0, item{e})
+						if err := m.loadPeriod(); err != nil {
+							m.err = err
+						}
 					}
 				}
 				m.state = stateNormal
@@ -217,6 +285,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.focused = 1 - m.focused
 				m.updateFocusStyles()
 				return m, nil
+			case "[":
+				m.period = m.period.prev()
+				m.err = nil
+				if err := m.loadPeriod(); err != nil {
+					m.err = err
+				}
+				return m, nil
+			case "]":
+				m.period = m.period.next()
+				m.err = nil
+				if err := m.loadPeriod(); err != nil {
+					m.err = err
+				}
+				return m, nil
+			case "a":
+				m.period = period{quarter: 0}
+				m.err = nil
+				if err := m.loadPeriod(); err != nil {
+					m.err = err
+				}
+				return m, nil
 			case "d":
 				sel, ok := m.cols[m.focused].SelectedItem().(item)
 				if !ok {
@@ -254,11 +343,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *Model) setSizes() {
 	colW := m.width/2 - 2
-	colH := m.height - 3
+	colH := m.height - 4 // -1 header, -3 footer
 	for i := range m.cols {
 		m.cols[i].SetSize(colW, colH)
 	}
 	m.textInput.Width = m.width - 6
+}
+
+// ── view ──────────────────────────────────────────────────────────────────────
+
+func (m Model) headerView() string {
+	nav := periodNavStyle.Render("◀") + "  " +
+		periodLabelStyle.Render(m.period.label()) + "  " +
+		periodNavStyle.Render("▶")
+	hint := helpStyle.Render("[/]: period   a: all time")
+	content := nav + "   " + hint
+	return lipgloss.NewStyle().Width(m.width).Align(lipgloss.Center).Render(content)
 }
 
 func (m Model) View() string {
@@ -267,7 +367,7 @@ func (m Model) View() string {
 	}
 
 	colW := m.width/2 - 2
-	colH := m.height - 3
+	colH := m.height - 4
 
 	renderCol := func(l list.Model, c col) string {
 		s := blurredBorder
@@ -306,11 +406,11 @@ func (m Model) View() string {
 		footer = inputStyle.Render(label + ": " + m.textInput.View())
 
 	default:
-		footer = helpStyle.Render("tab: switch  n: new  d: delete  e: edit  /: filter  q: quit")
+		footer = helpStyle.Render("tab: switch   n: new   d: delete   e: edit   /: filter   q: quit")
 		if m.err != nil {
 			footer += errStyle.Render("error: " + m.err.Error())
 		}
 	}
 
-	return columns + "\n" + footer
+	return m.headerView() + "\n" + columns + "\n" + footer
 }
