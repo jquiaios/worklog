@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/jquiaios/worklog/internal/db"
 	"github.com/jquiaios/worklog/internal/entry"
+	"github.com/jquiaios/worklog/internal/export"
 )
 
 // ── styles ────────────────────────────────────────────────────────────────────
@@ -110,6 +112,7 @@ const (
 	stateConfirmDelete
 	stateEditing
 	stateAdding
+	stateExporting
 )
 
 type Model struct {
@@ -123,6 +126,7 @@ type Model struct {
 	state       viewState
 	pendingItem item
 	textInput   textinput.Model
+	msg         string
 }
 
 func New(store *db.DB) (Model, error) {
@@ -219,6 +223,31 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.state = stateNormal
 			return m, nil
 
+		case stateExporting:
+			switch msg.String() {
+			case "enter":
+				filename := strings.TrimSpace(m.textInput.Value())
+				if filename != "" {
+					if err := m.writeExport(filename); err != nil {
+						m.err = err
+					} else {
+						m.err = nil
+						m.msg = "exported to " + filename
+					}
+				}
+				m.state = stateNormal
+				m.textInput.Blur()
+				return m, nil
+			case "esc":
+				m.state = stateNormal
+				m.textInput.Blur()
+				return m, nil
+			default:
+				var cmd tea.Cmd
+				m.textInput, cmd = m.textInput.Update(msg)
+				return m, cmd
+			}
+
 		case stateAdding:
 			switch msg.String() {
 			case "enter":
@@ -275,6 +304,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		case stateNormal:
+			m.msg = ""
 			if m.cols[m.focused].FilterState() == list.Filtering {
 				break
 			}
@@ -332,6 +362,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.textInput.Focus()
 				m.state = stateAdding
 				return m, nil
+			case "x":
+				m.textInput.SetValue(export.DefaultFilename(m.period.label()))
+				m.textInput.CursorEnd()
+				m.textInput.Width = m.width - 6
+				m.textInput.Focus()
+				m.msg = ""
+				m.state = stateExporting
+				return m, nil
 			}
 		}
 	}
@@ -339,6 +377,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.cols[m.focused], cmd = m.cols[m.focused].Update(msg)
 	return m, cmd
+}
+
+func (m *Model) writeExport(filename string) error {
+	from, to := m.period.bounds()
+	highlights, err := m.store.List(string(entry.Highlight), from, to)
+	if err != nil {
+		return err
+	}
+	lowlights, err := m.store.List(string(entry.Lowlight), from, to)
+	if err != nil {
+		return err
+	}
+	md := export.Single(m.period.label(), highlights, lowlights)
+	return os.WriteFile(filename, []byte(md), 0644)
 }
 
 func (m *Model) setSizes() {
@@ -393,6 +445,14 @@ func (m Model) View() string {
 			"  " + keyStyle.Render("y") + helpStyle.Render(" confirm") +
 			"  " + keyStyle.Render("n / esc") + helpStyle.Render(" cancel")
 
+	case stateExporting:
+		inputStyle := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("62")).
+			Padding(0, 1).
+			Width(m.width - 6)
+		footer = inputStyle.Render("Export to: " + m.textInput.View())
+
 	case stateAdding, stateEditing:
 		label := "New " + string(colTypes[m.focused])
 		if m.state == stateEditing {
@@ -406,9 +466,11 @@ func (m Model) View() string {
 		footer = inputStyle.Render(label + ": " + m.textInput.View())
 
 	default:
-		footer = helpStyle.Render("tab: switch   n: new   d: delete   e: edit   /: filter   q: quit")
+		footer = helpStyle.Render("tab: switch   n: new   d: delete   e: edit   x: export   /: filter   q: quit")
 		if m.err != nil {
 			footer += errStyle.Render("error: " + m.err.Error())
+		} else if m.msg != "" {
+			footer += helpStyle.Render("  ✓ " + m.msg)
 		}
 	}
 

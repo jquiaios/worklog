@@ -9,14 +9,15 @@ worklog ll "Missed the deploy window on Tuesday"
 
 ## Why
 
-Performance reviews reward the people who remember what they did — not the people who did the most. `worklog` makes it frictionless to capture a win or a miss in seconds, and gives you a clean way to review them when it matters.
+Performance reviews reward the people who remember what they did - not the people who did the most. `worklog` makes it frictionless to capture a win or a miss in seconds, and gives you a clean way to review them when it matters.
 
 ## Features
 
-- **Fast capture** from the terminal — one command, no friction
+- **Fast capture** from the terminal - one command, no friction
 - **Highlight / Lowlight** categorization out of the box
 - **TUI** for review time: two-column view, navigate, edit, delete, filter, browse by quarter
-- **SQLite storage** at `~/.worklog/worklog.db` — local, private, yours
+- **Markdown export** for any quarter or full year, from CLI or TUI
+- **SQLite storage** at `~/.worklog/worklog.db` - local, private, yours
 - **Pre-built binaries** for Linux, macOS (Intel + Apple Silicon), and Windows
 
 ## Installation
@@ -80,6 +81,20 @@ worklog delete 3
 worklog rm 3      # shorthand
 ```
 
+### Export to Markdown
+
+```bash
+worklog export                        # current quarter, printed to stdout
+worklog export -o review.md           # write to file instead
+
+worklog export -q Q1                  # specific quarter (current year)
+worklog export -q Q4 -y 2025          # specific quarter of a past year
+worklog export -y 2025                # full year (entries grouped by quarter)
+worklog export -y 2025 -o 2025.md     # full year, written to file
+```
+
+Output is a Markdown file with Highlights and Lowlights sections. Full-year exports include `### Q1 2025` subheadings inside each section.
+
 ### Open the TUI
 
 ```bash
@@ -97,13 +112,14 @@ Launches a full-terminal two-column view of your entries, scoped to the current 
 | `]` | Next quarter |
 | `a` | Show all entries (no period filter) |
 
-**Actions**
+**Actions** 
 
 | Key | Action |
 |-----|--------|
 | `n` | New entry in the focused column |
 | `e` | Edit selected entry |
 | `d` | Delete selected entry (asks for confirmation) |
+| `x` | Export current period to Markdown file |
 | `/` | Filter entries in the focused column |
 | `q` | Quit |
 
@@ -145,11 +161,11 @@ The workflow builds binaries for all platforms and publishes a GitHub Release au
 
 ## Built with
 
-- [Bubble Tea](https://github.com/charmbracelet/bubbletea) — TUI framework
-- [Lipgloss](https://github.com/charmbracelet/lipgloss) — TUI styling
-- [Bubbles](https://github.com/charmbracelet/bubbles) — TUI components
-- [Cobra](https://github.com/spf13/cobra) — CLI framework
-- [modernc/sqlite](https://gitlab.com/cznic/sqlite) — Pure-Go SQLite driver
+- [Bubble Tea](https://github.com/charmbracelet/bubbletea) - TUI framework
+- [Lipgloss](https://github.com/charmbracelet/lipgloss) - TUI styling
+- [Bubbles](https://github.com/charmbracelet/bubbles) - TUI components
+- [Cobra](https://github.com/spf13/cobra) - CLI framework
+- [modernc/sqlite](https://gitlab.com/cznic/sqlite) - Pure-Go SQLite driver
 
 ## License
 

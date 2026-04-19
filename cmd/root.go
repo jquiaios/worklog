@@ -13,7 +13,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "worklog",
-	Short: "Work log — capture highlights and lowlights fast",
+	Short: "Work log - capture highlights and lowlights fast",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		store, err := db.Open(dbPath())
 		if err != nil {

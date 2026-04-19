@@ -11,20 +11,41 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var highlightCmd = &cobra.Command{
+var addCmd = &cobra.Command{
+	Use:   "add",
+	Short: "Log a new entry",
+	Long:  "Log a new highlight or lowlight.\n\nExamples:\n  worklog add hl \"Won the sprint demo\"\n  worklog add ll \"Missed the deploy window\"",
+}
+
+var addHighlightCmd = &cobra.Command{
 	Use:     "highlight <text>",
 	Aliases: []string{"hl"},
-	Short:   "Log a highlight",
+	Short:   "[hl] Log a highlight",
 	Args:    cobra.MinimumNArgs(1),
 	Run:     addEntry(entry.Highlight),
 }
 
-var lowlightCmd = &cobra.Command{
+var addLowlightCmd = &cobra.Command{
 	Use:     "lowlight <text>",
 	Aliases: []string{"ll"},
-	Short:   "Log a lowlight",
+	Short:   "[ll] Log a lowlight",
 	Args:    cobra.MinimumNArgs(1),
 	Run:     addEntry(entry.Lowlight),
+}
+
+// Hidden top-level shortcuts so muscle memory still works.
+var hlCmd = &cobra.Command{
+	Use:    "hl <text>",
+	Hidden: true,
+	Args:   cobra.MinimumNArgs(1),
+	Run:    addEntry(entry.Highlight),
+}
+
+var llCmd = &cobra.Command{
+	Use:    "ll <text>",
+	Hidden: true,
+	Args:   cobra.MinimumNArgs(1),
+	Run:    addEntry(entry.Lowlight),
 }
 
 func addEntry(t entry.Type) func(cmd *cobra.Command, args []string) {
@@ -51,5 +72,6 @@ func addEntry(t entry.Type) func(cmd *cobra.Command, args []string) {
 }
 
 func init() {
-	rootCmd.AddCommand(highlightCmd, lowlightCmd)
+	addCmd.AddCommand(addHighlightCmd, addLowlightCmd)
+	rootCmd.AddCommand(addCmd, hlCmd, llCmd)
 }
