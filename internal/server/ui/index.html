@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>worklog</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d0d14;
+      --surface:  #13131f;
+      --border:   #2a2a3e;
+      --text:     #e2e2f0;
+      --muted:    #5a5a7a;
+      --hl:       #00d75f;
+      --ll:       #ff5f87;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      height: 52px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .logo {
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+    }
+
+    .period-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .period-nav button {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 0.25rem 0.65rem;
+      font-size: 0.82rem;
+      transition: background 0.1s, border-color 0.1s;
+    }
+
+    .period-nav button:hover {
+      background: var(--surface);
+      border-color: var(--muted);
+    }
+
+    #period-label {
+      font-weight: 600;
+      font-size: 0.95rem;
+      min-width: 88px;
+      text-align: center;
+    }
+
+    /* ── columns ── */
+    main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-right: 1px solid var(--border);
+    }
+
+    .column:last-child { border-right: none; }
+
+    .col-header {
+      padding: 0.7rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .hl-col .col-header { color: var(--hl); }
+    .ll-col .col-header { color: var(--ll); }
+
+    /* ── entry list ── */
+    .entry-list {
+      flex: 1;
+      overflow-y: auto;
+      list-style: none;
+      padding: 0.4rem 0;
+    }
+
+    .entry-list::-webkit-scrollbar { width: 4px; }
+    .entry-list::-webkit-scrollbar-track { background: transparent; }
+    .entry-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .entry-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      padding: 0.45rem 1rem;
+      transition: background 0.1s;
+    }
+
+    .entry-item:hover { background: var(--surface); }
+    .entry-item:hover .entry-actions { opacity: 1; }
+
+    .entry-body {
+      flex: 1;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .entry-date {
+      font-size: 0.73rem;
+      color: var(--muted);
+      white-space: nowrap;
+      padding-top: 0.18rem;
+    }
+
+    .entry-actions {
+      display: flex;
+      gap: 0.2rem;
+      opacity: 0;
+      transition: opacity 0.1s;
+      flex-shrink: 0;
+    }
+
+    .entry-actions button {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      font-size: 0.8rem;
+      transition: color 0.1s, background 0.1s;
+    }
+
+    .entry-actions button:hover { color: var(--text); background: var(--border); }
+    .entry-actions .del:hover   { color: var(--ll); }
+
+    /* ── inline edit ── */
+    .edit-wrap {
+      flex: 1;
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .edit-wrap input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.88rem;
+    }
+
+    .edit-wrap input:focus { outline: none; border-color: var(--muted); }
+
+    .edit-wrap button {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      transition: color 0.1s, border-color 0.1s;
+    }
+
+    .edit-wrap button:hover { color: var(--text); border-color: var(--muted); }
+
+    /* ── empty state ── */
+    .empty {
+      padding: 2rem 1rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
+    /* ── add form ── */
+    .add-form {
+      padding: 0.5rem 1rem;
+      border-top: 1px solid var(--border);
+      display: none;
+      gap: 0.4rem;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .add-form.visible { display: flex; }
+
+    .add-form input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.35rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.88rem;
+    }
+
+    .add-form input:focus { outline: none; border-color: var(--muted); }
+
+    .add-form button {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0.3rem 0.65rem;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      transition: color 0.1s, border-color 0.1s;
+    }
+
+    .hl-col .add-form .save:hover { color: var(--hl); border-color: var(--hl); }
+    .ll-col .add-form .save:hover { color: var(--ll); border-color: var(--ll); }
+    .add-form .cancel:hover        { color: var(--muted); border-color: var(--muted); }
+
+    .add-btn-row {
+      padding: 0.5rem 1rem;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .add-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.82rem;
+      padding: 0.15rem 0;
+      transition: color 0.1s;
+    }
+
+    .hl-col .add-btn:hover { color: var(--hl); }
+    .ll-col .add-btn:hover { color: var(--ll); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">worklog</div>
+  <div class="period-nav">
+    <button id="prev-btn">&#9664;</button>
+    <span id="period-label"></span>
+    <button id="next-btn">&#9654;</button>
+    <button id="all-btn">All time</button>
+  </div>
+  <div style="width:5rem"></div>
+</header>
+
+<main>
+  <section class="column hl-col">
+    <div class="col-header">Highlights</div>
+    <ul class="entry-list" id="hl-list"></ul>
+    <div class="add-form" id="hl-form">
+      <input type="text" id="hl-input" placeholder="New highlight..." maxlength="500">
+      <button class="save" id="hl-save">Add</button>
+      <button class="cancel" id="hl-cancel">Cancel</button>
+    </div>
+    <div class="add-btn-row">
+      <button class="add-btn" id="hl-add-btn">+ Add highlight</button>
+    </div>
+  </section>
+
+  <section class="column ll-col">
+    <div class="col-header">Lowlights</div>
+    <ul class="entry-list" id="ll-list"></ul>
+    <div class="add-form" id="ll-form">
+      <input type="text" id="ll-input" placeholder="New lowlight..." maxlength="500">
+      <button class="save" id="ll-save">Add</button>
+      <button class="cancel" id="ll-cancel">Cancel</button>
+    </div>
+    <div class="add-btn-row">
+      <button class="add-btn" id="ll-add-btn">+ Add lowlight</button>
+    </div>
+  </section>
+</main>
+
+<script>
+  // ── state ──────────────────────────────────────────────────────────────────
+
+  const now = new Date();
+  const state = {
+    quarter: Math.floor(now.getMonth() / 3) + 1,
+    year:    now.getFullYear(),
+    allTime: false,
+  };
+
+  // Snapshot of last-rendered data per type. null = not yet loaded.
+  const cache = { highlight: null, lowlight: null };
+
+  function resetCache() { cache.highlight = null; cache.lowlight = null; }
+
+  // ── period helpers ─────────────────────────────────────────────────────────
+
+  function periodLabel() {
+    return state.allTime ? 'All time' : `Q${state.quarter} ${state.year}`;
+  }
+
+  function prevPeriod() {
+    if (state.allTime) return;
+    if (state.quarter === 1) { state.quarter = 4; state.year--; }
+    else                     { state.quarter--; }
+  }
+
+  function nextPeriod() {
+    if (state.allTime) {
+      const n = new Date();
+      state.quarter = Math.floor(n.getMonth() / 3) + 1;
+      state.year    = n.getFullYear();
+      state.allTime = false;
+      return;
+    }
+    if (state.quarter === 4) { state.quarter = 1; state.year++; }
+    else                     { state.quarter++; }
+  }
+
+  // ── API helpers ────────────────────────────────────────────────────────────
+
+  function listURL(type) {
+    const p = new URLSearchParams({ type });
+    if (!state.allTime) { p.set('quarter', state.quarter); p.set('year', state.year); }
+    return `/api/entries?${p}`;
+  }
+
+  async function apiFetch(url, opts = {}) {
+    const res = await fetch(url, opts);
+    if (!res.ok) throw new Error(await res.text());
+    return res;
+  }
+
+  // ── render ─────────────────────────────────────────────────────────────────
+
+  function renderEntry(e, listEl) {
+    const li = document.createElement('li');
+    li.className = 'entry-item';
+    li.dataset.id   = e.id;
+    li.dataset.type = e.type;
+
+    const bodyEl = document.createElement('span');
+    bodyEl.className = 'entry-body';
+    bodyEl.textContent = e.body;
+
+    const dateEl = document.createElement('span');
+    dateEl.className = 'entry-date';
+    dateEl.textContent = e.created_at;
+
+    const actionsEl = document.createElement('span');
+    actionsEl.className = 'entry-actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.title = 'Edit';
+    editBtn.textContent = '✎';
+    editBtn.onclick = () => startEdit(e.id, e.type, li, bodyEl, actionsEl);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'del';
+    delBtn.title = 'Delete';
+    delBtn.textContent = '✕';
+    delBtn.onclick = () => confirmDelete(e.id, e.type, li);
+
+    actionsEl.append(editBtn, delBtn);
+    li.append(bodyEl, dateEl, actionsEl);
+    listEl.appendChild(li);
+  }
+
+  // Re-renders only if the data changed since last render.
+  async function loadColumn(type) {
+    const prefix  = type === 'highlight' ? 'hl' : 'll';
+    const listEl  = document.getElementById(`${prefix}-list`);
+    const entries = await apiFetch(listURL(type)).then(r => r.json()) || [];
+    const snapshot = JSON.stringify(entries);
+    if (cache[type] === snapshot) return;
+    cache[type] = snapshot;
+
+    listEl.innerHTML = '';
+    if (entries.length === 0) {
+      const li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = 'Nothing logged.';
+      listEl.appendChild(li);
+    } else {
+      entries.forEach(e => renderEntry(e, listEl));
+    }
+  }
+
+  async function load() {
+    document.getElementById('period-label').textContent = periodLabel();
+    await Promise.all([loadColumn('highlight'), loadColumn('lowlight')]);
+  }
+
+  // ── add ────────────────────────────────────────────────────────────────────
+
+  function showAdd(type) {
+    const prefix = type === 'highlight' ? 'hl' : 'll';
+    document.getElementById(`${prefix}-form`).classList.add('visible');
+    document.getElementById(`${prefix}-add-btn`).style.visibility = 'hidden';
+    const input = document.getElementById(`${prefix}-input`);
+    input.value = '';
+    input.focus();
+  }
+
+  function hideAdd(type) {
+    const prefix = type === 'highlight' ? 'hl' : 'll';
+    document.getElementById(`${prefix}-form`).classList.remove('visible');
+    document.getElementById(`${prefix}-add-btn`).style.visibility = '';
+  }
+
+  async function saveNew(type) {
+    const prefix = type === 'highlight' ? 'hl' : 'll';
+    const body   = document.getElementById(`${prefix}-input`).value.trim();
+    if (!body) return;
+    await apiFetch('/api/entries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, body }),
+    });
+    hideAdd(type);
+    cache[type] = null; // force re-render to show new entry
+    await loadColumn(type);
+  }
+
+  // ── edit ───────────────────────────────────────────────────────────────────
+
+  function startEdit(id, type, li, bodyEl, actionsEl) {
+    const originalBody = bodyEl.textContent;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'edit-wrap';
+
+    const input = document.createElement('input');
+    input.type  = 'text';
+    input.value = originalBody;
+    input.maxLength = 500;
+
+    const saveBtn   = document.createElement('button');
+    saveBtn.textContent = 'Save';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+
+    async function doSave() {
+      const newBody = input.value.trim();
+      if (!newBody || newBody === originalBody) { doCancel(); return; }
+      await apiFetch(`/api/entries/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: newBody }),
+      });
+      // Update DOM in place and patch cache so next poll doesn't re-render.
+      bodyEl.textContent = newBody;
+      wrap.replaceWith(bodyEl);
+      actionsEl.style.display = '';
+      if (cache[type]) {
+        const parsed = JSON.parse(cache[type]);
+        const entry  = parsed.find(e => e.id === id);
+        if (entry) { entry.body = newBody; cache[type] = JSON.stringify(parsed); }
+      }
+    }
+
+    function doCancel() {
+      wrap.replaceWith(bodyEl);
+      actionsEl.style.display = '';
+    }
+
+    saveBtn.onclick   = doSave;
+    cancelBtn.onclick = doCancel;
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter')  doSave();
+      if (e.key === 'Escape') doCancel();
+    });
+
+    wrap.append(input, saveBtn, cancelBtn);
+    bodyEl.replaceWith(wrap);
+    actionsEl.style.display = 'none';
+    input.focus();
+    input.select();
+  }
+
+  // ── delete ─────────────────────────────────────────────────────────────────
+
+  async function confirmDelete(id, type, li) {
+    const body  = li.querySelector('.entry-body').textContent;
+    const short = body.length > 60 ? body.slice(0, 60) + '\u2026' : body;
+    if (!confirm(`Delete "${short}"?`)) return;
+    await apiFetch(`/api/entries/${id}`, { method: 'DELETE' });
+
+    // Patch cache before touching DOM so next poll sees no diff.
+    if (cache[type]) {
+      const parsed = JSON.parse(cache[type]);
+      cache[type] = JSON.stringify(parsed.filter(e => e.id !== id));
+    }
+
+    const listEl = li.closest('.entry-list');
+    li.remove();
+    if (listEl.children.length === 0) {
+      const empty = document.createElement('li');
+      empty.className = 'empty';
+      empty.textContent = 'Nothing logged.';
+      listEl.appendChild(empty);
+    }
+  }
+
+  // ── wiring ─────────────────────────────────────────────────────────────────
+
+  document.getElementById('prev-btn').onclick = () => { prevPeriod(); resetCache(); load(); };
+  document.getElementById('next-btn').onclick = () => { nextPeriod(); resetCache(); load(); };
+  document.getElementById('all-btn').onclick  = () => { state.allTime = true; resetCache(); load(); };
+
+  for (const type of ['highlight', 'lowlight']) {
+    const prefix = type === 'highlight' ? 'hl' : 'll';
+    document.getElementById(`${prefix}-add-btn`).onclick = () => showAdd(type);
+    document.getElementById(`${prefix}-save`).onclick    = () => saveNew(type);
+    document.getElementById(`${prefix}-cancel`).onclick  = () => hideAdd(type);
+    document.getElementById(`${prefix}-input`).addEventListener('keydown', e => {
+      if (e.key === 'Enter')  saveNew(type);
+      if (e.key === 'Escape') hideAdd(type);
+    });
+  }
+
+  // ── init ───────────────────────────────────────────────────────────────────
+  load();
+
+  function shouldRefresh() {
+    return !document.querySelector('.add-form.visible') &&
+           !document.querySelector('.edit-wrap');
+  }
+  setInterval(() => { if (shouldRefresh()) load(); }, 3000);
+</script>
+</body>
+</html>

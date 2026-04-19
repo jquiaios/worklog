@@ -14,7 +14,16 @@ import (
 var addCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Log a new entry",
-	Long:  "Log a new highlight or lowlight.\n\nExamples:\n  worklog add hl \"Won the sprint demo\"\n  worklog add ll \"Missed the deploy window\"",
+	Long:  "Log a new highlight or lowlight.",
+	Example: `  worklog add highlight "Won the sprint demo"
+  worklog add hl "Won the sprint demo"
+  worklog highlight "Won the sprint demo"
+  worklog hl "Won the sprint demo"
+
+  worklog add lowlight "Missed the deploy window"
+  worklog add ll "Missed the deploy window"
+  worklog lowlight "Missed the deploy window"
+  worklog ll "Missed the deploy window"`,
 }
 
 var addHighlightCmd = &cobra.Command{
@@ -33,19 +42,21 @@ var addLowlightCmd = &cobra.Command{
 	Run:     addEntry(entry.Lowlight),
 }
 
-// Hidden top-level shortcuts so muscle memory still works.
+// Hidden top-level shortcuts: worklog highlight / worklog hl, worklog lowlight / worklog ll.
 var hlCmd = &cobra.Command{
-	Use:    "hl <text>",
-	Hidden: true,
-	Args:   cobra.MinimumNArgs(1),
-	Run:    addEntry(entry.Highlight),
+	Use:     "highlight <text>",
+	Aliases: []string{"hl"},
+	Hidden:  true,
+	Args:    cobra.MinimumNArgs(1),
+	Run:     addEntry(entry.Highlight),
 }
 
 var llCmd = &cobra.Command{
-	Use:    "ll <text>",
-	Hidden: true,
-	Args:   cobra.MinimumNArgs(1),
-	Run:    addEntry(entry.Lowlight),
+	Use:     "lowlight <text>",
+	Aliases: []string{"ll"},
+	Hidden:  true,
+	Args:    cobra.MinimumNArgs(1),
+	Run:     addEntry(entry.Lowlight),
 }
 
 func addEntry(t entry.Type) func(cmd *cobra.Command, args []string) {

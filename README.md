@@ -3,8 +3,8 @@
 A fast CLI + TUI for logging work highlights and lowlights throughout the year, so nothing is forgotten at review time.
 
 ```
-worklog hl "Delivered the auth refactor two days ahead of schedule"
-worklog ll "Missed the deploy window on Tuesday"
+worklog highlight "Delivered the auth refactor two days ahead of schedule"
+worklog lowlight "Missed the deploy window on Tuesday"
 ```
 
 ## Why
@@ -16,6 +16,7 @@ Performance reviews reward the people who remember what they did - not the peopl
 - **Fast capture** from the terminal - one command, no friction
 - **Highlight / Lowlight** categorization out of the box
 - **TUI** for review time: two-column view, navigate, edit, delete, filter, browse by quarter
+- **Web UI** via `worklog serve` - same two-column view in the browser, auto-refreshes
 - **Markdown export** for any quarter or full year, from CLI or TUI
 - **SQLite storage** at `~/.worklog/worklog.db` - local, private, yours
 - **Pre-built binaries** for Linux, macOS (Intel + Apple Silicon), and Windows
@@ -52,12 +53,20 @@ go install github.com/jquiaios/worklog/cmd/worklog@latest
 
 ### Add an entry
 
+All of the following are equivalent:
+
 ```bash
 worklog highlight "Won the sprint demo with the client"
-worklog hl "Won the sprint demo with the client"   # shorthand
+worklog hl "Won the sprint demo with the client"
+worklog add highlight "Won the sprint demo with the client"
+worklog add hl "Won the sprint demo with the client"
+```
 
+```bash
 worklog lowlight "Broke prod on Friday afternoon"
-worklog ll "Broke prod on Friday afternoon"        # shorthand
+worklog ll "Broke prod on Friday afternoon"
+worklog add lowlight "Broke prod on Friday afternoon"
+worklog add ll "Broke prod on Friday afternoon"
 ```
 
 ### List entries
@@ -94,6 +103,16 @@ worklog export -y 2025 -o 2025.md     # full year, written to file
 ```
 
 Output is a Markdown file with Highlights and Lowlights sections. Full-year exports include `### Q1 2025` subheadings inside each section.
+
+### Start the web UI
+
+```bash
+worklog serve             # opens http://localhost:7171 in your browser
+worklog serve -p 8080     # use a different port if 7171 is taken
+worklog serve --no-open   # start the server without opening the browser
+```
+
+The web UI auto-refreshes every 3 seconds, so entries added from the CLI or TUI appear automatically.
 
 ### Open the TUI
 
