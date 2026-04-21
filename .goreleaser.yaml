@@ -36,3 +36,17 @@ changelog:
     exclude:
       - "^chore:"
       - "^ci:"
+
+brews:
+  - name: worklog
+    repository:
+      owner: jquiaios
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/jquiaios/worklog"
+    description: "Fast CLI + TUI for logging work highlights and lowlights"
+    license: "MIT"
+    install: |
+      bin.install "worklog"
+    test: |
+      system "#{bin}/worklog", "--help"

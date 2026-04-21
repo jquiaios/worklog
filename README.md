@@ -23,7 +23,21 @@ Performance reviews reward the people who remember what they did - not the peopl
 
 ## Installation
 
-### Download a binary (recommended)
+### Homebrew (macOS and Linux)
+
+```bash
+brew install jquiaios/tap/worklog
+```
+
+### Go install
+
+If you have Go 1.23+ installed:
+
+```bash
+go install github.com/jquiaios/worklog/cmd/worklog@latest
+```
+
+### Download a binary
 
 Grab the latest release for your platform from the [Releases page](https://github.com/jquiaios/worklog/releases), extract it, and move it somewhere on your `$PATH`:
 
@@ -41,12 +55,10 @@ curl -L https://github.com/jquiaios/worklog/releases/latest/download/worklog_Lin
 sudo mv worklog /usr/local/bin/
 ```
 
-### Go install
-
-If you have Go 1.23+ installed:
+On macOS, if you downloaded the binary directly (not via Homebrew), Gatekeeper will block it on first run. Remove the quarantine flag once:
 
 ```bash
-go install github.com/jquiaios/worklog/cmd/worklog@latest
+xattr -d com.apple.quarantine /usr/local/bin/worklog
 ```
 
 ## Usage
