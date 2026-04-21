@@ -21,6 +21,7 @@ var serveCmd = &cobra.Command{
 	Short: "Start the web UI at http://localhost:7171",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		port, _   := cmd.Flags().GetInt("port")
+		host, _   := cmd.Flags().GetString("host")
 		noOpen, _ := cmd.Flags().GetBool("no-open")
 
 		store, err := db.Open(dbPath())
@@ -29,7 +30,7 @@ var serveCmd = &cobra.Command{
 		}
 		defer store.Close()
 
-		addr := fmt.Sprintf(":%d", port)
+		addr := fmt.Sprintf("%s:%d", host, port)
 		url  := fmt.Sprintf("http://localhost:%d", port)
 
 		httpServer := &http.Server{
@@ -78,6 +79,7 @@ func openBrowser(url string) {
 
 func init() {
 	serveCmd.Flags().IntP("port", "p", 7171, "port to listen on")
+	serveCmd.Flags().String("host", "127.0.0.1", "host to bind to (use 0.0.0.0 inside Docker)")
 	serveCmd.Flags().Bool("no-open", false, "do not open the browser automatically")
 	rootCmd.AddCommand(serveCmd)
 }

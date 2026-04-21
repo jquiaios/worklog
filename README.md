@@ -165,12 +165,13 @@ The project uses Docker so you don't need Go installed locally.
 ```bash
 git clone https://github.com/jquiaios/worklog.git
 cd worklog
-
-# Build
 docker build -t worklog .
+mkdir -p ~/.worklog
+docker run -it --rm --user $(id -u):$(id -g) -v ~/.worklog:/home/wl/.worklog worklog
 
-# Run
-docker run -it --rm -v ~/.worklog:/root/.worklog worklog
+# For the web UI inside Docker, publish the port and bind to all interfaces
+# inside the container (Docker's port forwarding is the isolation boundary):
+docker run --rm -p 7171:7171 -v ~/.worklog:/home/wl/.worklog worklog serve --host 0.0.0.0 --no-open
 ```
 
 After adding or removing dependencies, regenerate `go.sum`:
