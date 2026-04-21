@@ -11,15 +11,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Version is the build-time application version, injected via ldflags.
+// Falls back to "dev" for local (non-released) builds.
+var Version = "dev"
+
 var rootCmd = &cobra.Command{
-	Use:   "worklog",
-	Short: "Work log - capture highlights and lowlights fast",
+	Use:     "worklog",
+	Short:   "Work log - capture highlights and lowlights fast",
+	Version: Version,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		store, err := db.Open(dbPath())
 		if err != nil {
 			return fmt.Errorf("opening database: %w", err)
 		}
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 
 		m, err := tui.New(store)
 		if err != nil {
@@ -31,6 +36,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
+	rootCmd.Version = Version
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}

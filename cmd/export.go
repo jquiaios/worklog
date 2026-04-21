@@ -57,7 +57,7 @@ Defaults to the current quarter. Use -q for a specific quarter,
 		if err != nil {
 			return fmt.Errorf("opening database: %w", err)
 		}
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 
 		highlights, err := store.List(string(entry.Highlight), from, to)
 		if err != nil {

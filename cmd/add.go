@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -31,7 +30,7 @@ var addHighlightCmd = &cobra.Command{
 	Aliases: []string{"hl"},
 	Short:   "[hl] Log a highlight",
 	Args:    cobra.MinimumNArgs(1),
-	Run:     addEntry(entry.Highlight),
+	RunE:    addEntry(entry.Highlight),
 }
 
 var addLowlightCmd = &cobra.Command{
@@ -39,7 +38,7 @@ var addLowlightCmd = &cobra.Command{
 	Aliases: []string{"ll"},
 	Short:   "[ll] Log a lowlight",
 	Args:    cobra.MinimumNArgs(1),
-	Run:     addEntry(entry.Lowlight),
+	RunE:    addEntry(entry.Lowlight),
 }
 
 // Hidden top-level shortcuts: worklog highlight / worklog hl, worklog lowlight / worklog ll.
@@ -48,7 +47,7 @@ var hlCmd = &cobra.Command{
 	Aliases: []string{"hl"},
 	Hidden:  true,
 	Args:    cobra.MinimumNArgs(1),
-	Run:     addEntry(entry.Highlight),
+	RunE:    addEntry(entry.Highlight),
 }
 
 var llCmd = &cobra.Command{
@@ -56,29 +55,27 @@ var llCmd = &cobra.Command{
 	Aliases: []string{"ll"},
 	Hidden:  true,
 	Args:    cobra.MinimumNArgs(1),
-	Run:     addEntry(entry.Lowlight),
+	RunE:    addEntry(entry.Lowlight),
 }
 
-func addEntry(t entry.Type) func(cmd *cobra.Command, args []string) {
-	return func(cmd *cobra.Command, args []string) {
+func addEntry(t entry.Type) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
 		body := strings.TrimSpace(strings.Join(args, " "))
 		if body == "" {
-			fmt.Fprintln(os.Stderr, "error: entry body cannot be empty")
-			os.Exit(1)
+			return fmt.Errorf("entry body cannot be empty")
 		}
 		store, err := db.Open(dbPath())
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "error opening database:", err)
-			os.Exit(1)
+			return fmt.Errorf("opening database: %w", err)
 		}
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 
 		e := entry.Entry{Type: t, Body: body, CreatedAt: time.Now()}
 		if _, err := store.Insert(e); err != nil {
-			fmt.Fprintln(os.Stderr, "error saving entry:", err)
-			os.Exit(1)
+			return fmt.Errorf("saving entry: %w", err)
 		}
 		fmt.Printf("[%s] %s\n", t, body)
+		return nil
 	}
 }
 

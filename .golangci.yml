@@ -1,0 +1,16 @@
+version: "2"
+
+linters:
+  settings:
+    errcheck:
+      # Common idiomatic "fire and forget" calls we explicitly don't care about:
+      # - Close on deferred cleanup (CLI exits anyway)
+      # - http.Server.Shutdown inside a signal handler
+      # - exec.Cmd.Start for opening the browser (failure is harmless)
+      # Only stdlib / external patterns that are truly idiomatic to ignore.
+      # Errors on our own types are handled explicitly at the call site.
+      exclude-functions:
+        - (*database/sql.DB).Close
+        - (*database/sql.Rows).Close
+        - (*net/http.Server).Shutdown
+        - (*os/exec.Cmd).Start

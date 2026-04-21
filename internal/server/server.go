@@ -3,6 +3,7 @@ package server
 import (
 	"embed"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -38,7 +39,9 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write(data)
+	if _, err := w.Write(data); err != nil {
+		log.Printf("server: writing index: %v", err)
+	}
 }
 
 type entryResponse struct {
@@ -161,5 +164,7 @@ func (s *Server) handleDeleteEntry(w http.ResponseWriter, r *http.Request) {
 
 func writeJSON(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(v)
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		log.Printf("server: encoding JSON response: %v", err)
+	}
 }

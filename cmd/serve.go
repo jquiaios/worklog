@@ -28,7 +28,7 @@ var serveCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("opening database: %w", err)
 		}
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 
 		addr := fmt.Sprintf("%s:%d", host, port)
 		url  := fmt.Sprintf("http://localhost:%d", port)

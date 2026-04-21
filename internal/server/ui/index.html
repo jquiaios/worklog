@@ -358,6 +358,8 @@
 
   // ── render ─────────────────────────────────────────────────────────────────
 
+  // textContent (used below) auto-escapes, so no manual HTML escaping is needed.
+
   function renderEntry(e, listEl) {
     const li = document.createElement('li');
     li.className = 'entry-item';

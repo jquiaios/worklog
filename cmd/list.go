@@ -28,7 +28,7 @@ var listCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("opening database: %w", err)
 		}
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 
 		entries, err := store.List(typeFilter, time.Time{}, time.Time{})
 		if err != nil {

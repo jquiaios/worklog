@@ -23,7 +23,7 @@ var deleteCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("opening database: %w", err)
 		}
-		defer store.Close()
+		defer func() { _ = store.Close() }()
 
 		found, err := store.Delete(id)
 		if err != nil {

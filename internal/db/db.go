@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS entries (
 	created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`
 
+// DB wraps a SQLite connection and exposes typed helpers for the entries table.
 type DB struct {
 	sql *sql.DB
 }

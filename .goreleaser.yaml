@@ -6,7 +6,7 @@ builds:
     env:
       - CGO_ENABLED=0
     ldflags:
-      - -s -w
+      - -s -w -X github.com/jquiaios/worklog/cmd.Version={{.Version}}
     goos:
       - linux
       - darwin
