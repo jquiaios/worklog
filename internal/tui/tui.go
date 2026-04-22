@@ -140,9 +140,11 @@ func New(store *db.DB) (Model, error) {
 
 	hlList := list.New(nil, hlDelegate, 0, 0)
 	hlList.SetShowHelp(false)
+	hlList.SetShowStatusBar(false)
 
 	llList := list.New(nil, llDelegate, 0, 0)
 	llList.SetShowHelp(false)
+	llList.SetShowStatusBar(false)
 
 	ti := textinput.New()
 	ti.CharLimit = 500
