@@ -31,7 +31,7 @@ brew install jquiaios/tap/worklog
 
 ### Go install
 
-If you have Go 1.23+ installed:
+If you have Go 1.25+ installed:
 
 ```bash
 go install github.com/jquiaios/worklog/cmd/worklog@latest
