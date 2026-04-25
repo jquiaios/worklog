@@ -1,47 +1,72 @@
 # worklog
 
-A fast CLI + TUI for logging work highlights and lowlights throughout the year, so nothing is forgotten at review time.
+[![Latest Release](https://img.shields.io/github/release/jquiaios/worklog.svg)](https://github.com/jquiaios/worklog/releases)
+[![Go Reference](https://pkg.go.dev/badge/github.com/jquiaios/worklog.svg)](https://pkg.go.dev/github.com/jquiaios/worklog)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jquiaios/worklog)](https://goreportcard.com/report/github.com/jquiaios/worklog)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+
+Log work highlights and lowlights as they happen — so performance reviews aren't a memory test.
+
+![worklog TUI demo](./docs/demo.gif)
+
+<!-- TODO: replace docs/demo.gif with a VHS-generated GIF of the TUI: open → add a highlight → add a lowlight → navigate a quarter → quit -->
+
+> The example above shows the TUI. See [`docs/demo.tape`](./docs/demo.tape) for the source.
+
+## Tutorial
+
+To get started, [install worklog](#installation).
+
+Capture a highlight the moment it happens:
 
 ```
-worklog highlight "Delivered the auth refactor two days ahead of schedule"
-worklog lowlight "Missed the deploy window on Tuesday"
+worklog hl "Delivered the auth refactor two days ahead of schedule"
 ```
 
-## Why
+Capture a lowlight just as quickly:
 
-Performance reviews reward the people who remember what they did - not the people who did the most. `worklog` makes it frictionless to capture a win or a miss in seconds, and gives you a clean way to review them when it matters.
+```
+worklog ll "Missed the deploy window on Tuesday"
+```
 
-## Features
+When review season comes around, open the TUI to browse your quarter:
 
-- **Fast capture** from the terminal - one command, no friction
-- **Highlight / Lowlight** categorization out of the box
-- **TUI** for review time: two-column view, navigate, edit, delete, filter, browse by quarter
-- **Web UI** via `worklog serve` - same two-column view in the browser, auto-refreshes
-- **Markdown export** for any quarter or full year, from CLI or TUI
-- **SQLite storage** at `~/.worklog/worklog.db` - local, private, yours
-- **Pre-built binaries** for Linux, macOS (Intel + Apple Silicon), and Windows
+```
+worklog
+```
+
+Or export everything to Markdown for your review doc:
+
+```
+worklog export -y 2025 -o review-2025.md
+```
+
+That's it. Keep logging as you go, and you'll never walk into a 1:1 empty-handed again.
 
 ## Installation
 
-### Homebrew (macOS and Linux)
+> **Note**
+> worklog stores its data in a SQLite database at `~/.worklog/worklog.db`. Nothing is ever sent over the network.
 
-```bash
+Use a package manager:
+
+```
+# macOS or Linux
 brew install jquiaios/tap/worklog
 ```
 
-### Go install
+Or install with `go` (requires Go 1.25+):
 
-If you have Go 1.25+ installed:
-
-```bash
+```
 go install github.com/jquiaios/worklog/cmd/worklog@latest
 ```
 
-### Download a binary
+Or download a pre-built binary from the [Releases page](https://github.com/jquiaios/worklog/releases) for Linux, macOS (Intel + Apple Silicon), or Windows.
 
-Grab the latest release for your platform from the [Releases page](https://github.com/jquiaios/worklog/releases), extract it, and move it somewhere on your `$PATH`:
+<details>
+<summary>macOS, Linux, Windows direct download instructions</summary>
 
-```bash
+```
 # macOS (Apple Silicon)
 curl -L https://github.com/jquiaios/worklog/releases/latest/download/worklog_Darwin_arm64.tar.gz | tar xz
 sudo mv worklog /usr/local/bin/
@@ -57,39 +82,39 @@ sudo mv worklog /usr/local/bin/
 
 On macOS, if you downloaded the binary directly (not via Homebrew), Gatekeeper will block it on first run. Remove the quarantine flag once:
 
-```bash
+```
 xattr -d com.apple.quarantine /usr/local/bin/worklog
 ```
 
-## Usage
+</details>
+
+## CLI
+
+The CLI is designed to be fast enough that logging an entry never breaks your flow.
 
 ### Add an entry
 
 All of the following are equivalent:
 
-```bash
+```
 worklog highlight "Won the sprint demo with the client"
 worklog hl "Won the sprint demo with the client"
 worklog add highlight "Won the sprint demo with the client"
 worklog add hl "Won the sprint demo with the client"
 ```
 
-```bash
-worklog lowlight "Broke prod on Friday afternoon"
-worklog ll "Broke prod on Friday afternoon"
-worklog add lowlight "Broke prod on Friday afternoon"
-worklog add ll "Broke prod on Friday afternoon"
-```
+The same shorthands apply to lowlights (`lowlight`, `ll`, `add lowlight`, `add ll`).
 
 ### List entries
 
-```bash
+```
 worklog list                    # all entries, newest first
 worklog list -t hl              # highlights only
 worklog list --type lowlight    # lowlights only
 ```
 
 Output:
+
 ```
 #4    2026-04-18  [highlight]  Won the sprint demo with the client
 #3    2026-04-17  [lowlight]   Broke prod on Friday afternoon
@@ -97,14 +122,14 @@ Output:
 
 ### Delete an entry
 
-```bash
+```
 worklog delete 3
 worklog rm 3      # shorthand
 ```
 
 ### Export to Markdown
 
-```bash
+```
 worklog export                        # current quarter, printed to stdout
 worklog export -o review.md           # write to file instead
 
@@ -114,77 +139,59 @@ worklog export -y 2025                # full year (entries grouped by quarter)
 worklog export -y 2025 -o 2025.md     # full year, written to file
 ```
 
-Output is a Markdown file with Highlights and Lowlights sections. Full-year exports include `### Q1 2025` subheadings inside each section.
+Exports are plain Markdown with `Highlights` and `Lowlights` sections. Full-year exports add `### Q1 2025` subheadings inside each section.
 
-### Start the web UI
+## TUI
 
-```bash
-worklog serve             # opens http://localhost:7171 in your browser
-worklog serve -p 8080     # use a different port if 7171 is taken
-worklog serve --no-open   # start the server without opening the browser
-```
+Run `worklog` with no arguments to launch the TUI — a two-column view scoped to the current quarter by default.
 
-The web UI auto-refreshes every 3 seconds, so entries added from the CLI or TUI appear automatically.
+![worklog TUI](./docs/tui.png)
 
-### Open the TUI
-
-```bash
-worklog
-```
-
-Launches a full-terminal two-column view of your entries, scoped to the current quarter by default.
+<!-- TODO: replace docs/tui.png with a static screenshot of the TUI with a few entries populated -->
 
 **Navigation**
 
-| Key | Action |
-|-----|--------|
+| Key   | Action                                |
+| ----- | ------------------------------------- |
 | `tab` | Switch between Highlights and Lowlights |
-| `[` | Previous quarter |
-| `]` | Next quarter |
-| `a` | Show all entries (no period filter) |
+| `[`   | Previous quarter                      |
+| `]`   | Next quarter                          |
+| `a`   | Show all entries (no period filter)   |
 
-**Actions** 
+**Actions**
 
-| Key | Action |
-|-----|--------|
-| `n` | New entry in the focused column |
-| `e` | Edit selected entry |
-| `d` | Delete selected entry (asks for confirmation) |
-| `x` | Export current period to Markdown file |
-| `/` | Filter entries in the focused column |
-| `q` | Quit |
+| Key | Action                                          |
+| --- | ----------------------------------------------- |
+| `n` | New entry in the focused column                 |
+| `e` | Edit selected entry                             |
+| `d` | Delete selected entry (asks for confirmation)   |
+| `x` | Export current period to Markdown file          |
+| `/` | Filter entries in the focused column            |
+| `q` | Quit                                            |
+
+## Web UI
+
+Prefer a browser? `worklog serve` starts a local web UI that mirrors the TUI's two-column layout and auto-refreshes every 3 seconds — so entries added from the CLI or TUI appear without reloading.
+
+```
+worklog serve             # opens http://localhost:7171 in your browser
+worklog serve -p 8080     # use a different port if 7171 is taken
+worklog serve --no-open   # start without opening the browser
+```
+
+![worklog web UI](./docs/web.png)
+
+<!-- TODO: replace docs/web.png with a screenshot of the web UI -->
 
 ## Data
 
-Entries are stored in a SQLite database at `~/.worklog/worklog.db`. It is never sent anywhere. You can back it up, copy it to another machine, or open it directly with any SQLite client.
-
-## Development
-
-The project uses Docker so you don't need Go installed locally.
-
-```bash
-git clone https://github.com/jquiaios/worklog.git
-cd worklog
-docker build -t worklog .
-mkdir -p ~/.worklog
-docker run -it --rm --user $(id -u):$(id -g) -v ~/.worklog:/home/wl/.worklog worklog
-
-# For the web UI inside Docker, publish the port and bind to all interfaces
-# inside the container (Docker's port forwarding is the isolation boundary):
-docker run --rm -p 7171:7171 -v ~/.worklog:/home/wl/.worklog worklog serve --host 0.0.0.0 --no-open
-```
-
-After adding or removing dependencies, regenerate `go.sum`:
-
-```bash
-docker run --rm -v $(pwd):/src -w /src golang:1.23-alpine go mod tidy
-```
+Entries live in a SQLite database at `~/.worklog/worklog.db`. It's local, private, and yours — you can back it up, copy it to another machine, or open it with any SQLite client.
 
 ## Releasing
 
-Releases are automated via GoReleaser and GitHub Actions. To cut a new release:
+Releases are automated via [GoReleaser](https://goreleaser.com/) and GitHub Actions. To cut a new release:
 
-```bash
+```
 git tag v1.2.3
 git push origin v1.2.3
 ```
@@ -193,12 +200,16 @@ The workflow builds binaries for all platforms and publishes a GitHub Release au
 
 ## Built with
 
-- [Bubble Tea](https://github.com/charmbracelet/bubbletea) - TUI framework
-- [Lipgloss](https://github.com/charmbracelet/lipgloss) - TUI styling
-- [Bubbles](https://github.com/charmbracelet/bubbles) - TUI components
-- [Cobra](https://github.com/spf13/cobra) - CLI framework
-- [modernc/sqlite](https://gitlab.com/cznic/sqlite) - Pure-Go SQLite driver
+- [Bubble Tea](https://github.com/charmbracelet/bubbletea) — TUI framework
+- [Lip Gloss](https://github.com/charmbracelet/lipgloss) — TUI styling
+- [Bubbles](https://github.com/charmbracelet/bubbles) — TUI components
+- [Cobra](https://github.com/spf13/cobra) — CLI framework
+- [modernc/sqlite](https://gitlab.com/cznic/sqlite) — Pure-Go SQLite driver
+
+## Contributing
+
+Issues and pull requests are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup and guidelines.
 
 ## License
 
-MIT
+[MIT](./LICENSE)
