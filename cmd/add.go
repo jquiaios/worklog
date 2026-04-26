@@ -74,7 +74,8 @@ func addEntry(t entry.Type) func(cmd *cobra.Command, args []string) error {
 		if _, err := store.Insert(e); err != nil {
 			return fmt.Errorf("saving entry: %w", err)
 		}
-		fmt.Printf("[%s] %s\n", t, body)
+		_, ansi := typeLabel(t)
+		fmt.Printf("Added %s[%s]\033[0m \033[2m%s\033[0m\n", ansi, t, body)
 		return nil
 	}
 }
