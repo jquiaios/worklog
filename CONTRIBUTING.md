@@ -27,10 +27,25 @@ docker run -it --rm --user $(id -u):$(id -g) -v ~/.worklog:/home/wl/.worklog wor
 
 If you prefer a local Go setup, Go 1.25+ is required.
 
+## Common tasks
+
+All commands are Docker-based — no local Go or VHS install needed.
+
+| Command | What it does |
+| --- | --- |
+| `make build` | Build the Docker image |
+| `make run` | Launch the TUI (mounts `~/.worklog`) |
+| `make test` | Run the test suite with the race detector |
+| `make lint` | Run `golangci-lint` (same as CI) |
+| `make demo` | Regenerate `docs/demo.gif` from `docs/demo.tape` |
+| `make demo-tui` | Regenerate `docs/tui.gif` from `docs/tui.tape` |
+
+If you update either tape file, commit the regenerated GIF alongside it so the README stays in sync.
+
 ## Submitting a pull request
 
 1. Fork the repo and create a branch from `main`.
-2. Make your changes and ensure existing tests pass (`go test ./...`).
+2. Make your changes and ensure existing tests pass (`make test`).
 3. Add tests for new behaviour where it makes sense.
 4. Keep commits focused — one logical change per commit.
 5. Open a pull request against `main` with a clear description of what and why.
