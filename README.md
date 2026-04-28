@@ -75,32 +75,25 @@ Or install with `go` (requires Go 1.25+):
 go install github.com/jquiaios/worklog/cmd/worklog@latest
 ```
 
-Or download a pre-built binary from the [Releases page](https://github.com/jquiaios/worklog/releases) for Linux, macOS (Intel + Apple Silicon), or Windows.
-
-<details>
-<summary>macOS, Linux, Windows direct download instructions</summary>
+Or use the install script (detects your OS and architecture automatically):
 
 ```bash
-# macOS (Apple Silicon)
-curl -L https://github.com/jquiaios/worklog/releases/latest/download/worklog_Darwin_arm64.tar.gz | tar xz
-sudo mv worklog /usr/local/bin/
-
-# macOS (Intel)
-curl -L https://github.com/jquiaios/worklog/releases/latest/download/worklog_Darwin_amd64.tar.gz | tar xz
-sudo mv worklog /usr/local/bin/
-
-# Linux (amd64)
-curl -L https://github.com/jquiaios/worklog/releases/latest/download/worklog_Linux_amd64.tar.gz | tar xz
-sudo mv worklog /usr/local/bin/
+curl -fsSL https://raw.githubusercontent.com/jquiaios/worklog/main/install.sh | sh
 ```
 
-On macOS, if you downloaded the binary directly (not via Homebrew), Gatekeeper will block it on first run. Remove the quarantine flag once:
+To pin a specific version or choose a different install directory:
 
 ```bash
-xattr -d com.apple.quarantine /usr/local/bin/worklog
+WORKLOG_VERSION=0.2.0 curl -fsSL https://raw.githubusercontent.com/jquiaios/worklog/main/install.sh | sh
+WORKLOG_INSTALL_DIR=~/.local/bin curl -fsSL https://raw.githubusercontent.com/jquiaios/worklog/main/install.sh | sh
 ```
 
-</details>
+Or download a pre-built binary directly from the [Releases page](https://github.com/jquiaios/worklog/releases) for Linux, macOS (Intel + Apple Silicon), or Windows.
+
+> **macOS note:** If you installed via the script or downloaded directly (not Homebrew), Gatekeeper may block the first run. Remove the quarantine flag once:
+> ```bash
+> xattr -d com.apple.quarantine /usr/local/bin/worklog
+> ```
 
 ## CLI
 
