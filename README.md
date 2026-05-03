@@ -1,5 +1,6 @@
 # worklog
 
+[![CI](https://github.com/jquiaios/worklog/actions/workflows/ci.yml/badge.svg)](https://github.com/jquiaios/worklog/actions/workflows/ci.yml)
 [![Latest Release](https://img.shields.io/github/release/jquiaios/worklog.svg)](https://github.com/jquiaios/worklog/releases)
 [![Go Reference](https://pkg.go.dev/badge/github.com/jquiaios/worklog.svg)](https://pkg.go.dev/github.com/jquiaios/worklog)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jquiaios/worklog)](https://goreportcard.com/report/github.com/jquiaios/worklog)
