@@ -8,7 +8,7 @@ RUN go mod download
 COPY . .
 RUN go build -o /worklog ./cmd/worklog
 
-FROM alpine:3.23 AS app
+FROM alpine:3.24 AS app
 
 RUN adduser -D -u 1000 wl
 USER wl
